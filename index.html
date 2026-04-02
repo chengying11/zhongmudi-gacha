@@ -878,6 +878,7 @@
             drawsSinceLast5: 0,                      // 距上次5星+的抽数
             star6: 0,                                 // 6星总数
             star6UP: 0,                               // 6星UP数
+            star6NonUP: 0,                            // 6星非UP数
             star5: 0,                                 // 5星数
             star4: 0,                                 // 4星数
             weaponQuota: 0,                            // 武器配额
@@ -900,6 +901,7 @@
 
         state.poolDraws++;
         state.totalDraws++;
+        state.pity++;
         state.pityForUP++;
         state.drawsSinceLast5++;
         state.potentialGuarantee++;
@@ -921,7 +923,7 @@
         }
 
         // 大保底检查
-        if (state.poolDraws === 120 && !state.bigGuaranteeUsed && state.hasBigGuarantee) {
+        if (state.poolDraws === 120 && !state.bigGuaranteeUsed) {
             state.star6++;
             state.star6UP++;
             state.weaponQuota += 2000;
@@ -952,17 +954,18 @@
             state.drawsSinceLast5 = 0;
 
             if (Math.random() < 0.5) {
-                state.star6UP++;
-                state.pityForUP = 0;
-                state.hasBigGuarantee = false;
-                state.bigGuaranteeUsed = false;
-                state.potentialGuarantee = 0;
-            } else {
-                // 歪了，检查是否触发大保底
-                state.hasBigGuarantee = true;
-                // 特殊规则：限定卡池歪出的6星干员中有48%概率能歪到其他两个非UP限定干员
-                // 这里简化处理，不做具体区分
-            }
+                        state.star6UP++;
+                        state.pityForUP = 0;
+                        state.hasBigGuarantee = false;
+                        state.bigGuaranteeUsed = false;
+                        state.potentialGuarantee = 0;
+                    } else {
+                        // 歪了，检查是否触发大保底
+                        state.star6NonUP++;
+                        state.hasBigGuarantee = true;
+                        // 特殊规则：限定卡池歪出的6星干员中有48%概率能歪到其他两个非UP限定干员
+                        // 这里简化处理，不做具体区分
+                    }
         } else if (roll < rate6 + 0.04 || guaranteed5) {
             // 出5星
             state.star5++;
@@ -1049,6 +1052,7 @@
                 poolDraws: state.poolDraws,
                 star6: state.star6,
                 star6UP: state.star6UP,
+                star6NonUP: state.star6NonUP,
                 star5: state.star5,
                 star4: state.star4,
                 weaponQuota: state.weaponQuota,
@@ -1079,6 +1083,7 @@
                 const roll = Math.random();
 
                 state.poolDraws++;
+                state.pity++;
                 state.pityForUP++;
                 state.drawsSinceLast5++;
                 state.potentialGuarantee++;
@@ -1103,7 +1108,7 @@
                 }
 
                 // 大保底检查
-                if (state.poolDraws === 120 && !state.bigGuaranteeUsed && state.hasBigGuarantee) {
+                if (state.poolDraws === 120 && !state.bigGuaranteeUsed) {
                     state.star6++;
                     state.star6UP++;
                     state.weaponQuota += 2000;
@@ -1145,6 +1150,7 @@
                         return true;
                     } else {
                         // 歪了，检查是否触发大保底
+                        state.star6NonUP++;
                         state.hasBigGuarantee = true;
                         return false;
                     }
@@ -1158,7 +1164,7 @@
             if (this.hasPrev60Pity) {
                 for (let i = 0; i < 10; i++) {
                     if (drawOnce(true) && state.star6UP >= targetUP) {
-                        return { poolDraws: state.poolDraws, star6UP: state.star6UP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
+                        return { poolDraws: state.poolDraws, star6UP: state.star6UP, star6NonUP: state.star6NonUP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
                     }
                 }
             }
@@ -1166,7 +1172,7 @@
             // 免费5抽
             for (let i = 0; i < 5; i++) {
                 if (drawOnce(true) && state.star6UP >= targetUP) {
-                    return { poolDraws: state.poolDraws, star6UP: state.star6UP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
+                    return { poolDraws: state.poolDraws, star6UP: state.star6UP, star6NonUP: state.star6NonUP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
                 }
             }
 
@@ -1175,7 +1181,7 @@
                 drawOnce(false);
             }
 
-            return { poolDraws: state.poolDraws, star6UP: state.star6UP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
+            return { poolDraws: state.poolDraws, star6UP: state.star6UP, star6NonUP: state.star6NonUP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
         }
     }
 
@@ -1248,6 +1254,10 @@
                             <div class="stat-label">平均6星/次</div>
                         </div>
                         <div class="stat-card">
+                            <div class="stat-value secondary">${results.avgNonUPPerRun}</div>
+                            <div class="stat-label">平均非限定/次</div>
+                        </div>
+                        <div class="stat-card">
                             <div class="stat-value gold">${results.avgWeaponQuotaPerRun}</div>
                             <div class="stat-label">平均武器配额/次</div>
                         </div>
@@ -1297,6 +1307,7 @@
         const dist = {};
         const quotaByLimit = {};
         let totalUP = 0;
+        let totalNonUP = 0;
         let total6Star = 0;
         let totalWeaponQuota = 0;
         let totalDrawsAll = 0;
@@ -1308,6 +1319,7 @@
             const result = sim.runOnce();
 
             totalUP += result.star6UP;
+            totalNonUP += result.star6NonUP;
             total6Star += result.star6;
             totalWeaponQuota += result.weaponQuota;
             totalDrawsAll += result.totalDraws;
@@ -1336,12 +1348,14 @@
             distribution: dist,
             quotaByLimit,
             totalUP,
+            totalNonUP,
             total6Star,
             totalWeaponQuota,
             totalDrawsAll,
             minLimit: minLimit === Infinity ? 0 : minLimit,
             maxLimit,
             avgLimitPerRun: (totalUP / times).toFixed(2),
+            avgNonUPPerRun: (totalNonUP / times).toFixed(2),
             avgDrawsPerRun: (totalDrawsAll / times).toFixed(1),
             avg6PerRun: (total6Star / times).toFixed(2),
             avgWeaponQuotaPerRun: (totalWeaponQuota / times).toFixed(1),
@@ -1406,6 +1420,10 @@
                             <div class="result-detail-value" style="font-size: 1.5rem;">${results.avgWeaponQuota.toLocaleString()}</div>
                             <div class="result-detail-label">平均武器配额/次</div>
                         </div>
+                        <div class="result-detail-item" style="padding: 25px;">
+                            <div class="result-detail-value" style="font-size: 1.5rem;">${results.avgNonUP.toLocaleString()}</div>
+                            <div class="result-detail-label">平均非限定6星/次</div>
+                        </div>
                     </div>
                     <div style="padding: 10px 20px; background: #252525; font-size: 0.75rem; color: #666666; border-top: 1px solid #2A2A2A;">
                         * 平均总抽数不含30抽特殊十连；抽卡券 = 合成玉 ÷ 500（向上取整）
@@ -1453,6 +1471,7 @@
         let totalDraws = 0;
         let totalJade = 0;
         let totalWeaponQuota = 0;
+        let totalNonUP = 0;
         let min = Infinity;
         let max = 0;
 
@@ -1463,11 +1482,13 @@
             const draws = result.poolDraws;
             const jade = result.jadeConsumed;
             const weaponQuota = result.weaponQuota;
+            const nonUP = result.star6NonUP;
 
             allDraws.push(draws);
             totalDraws += draws;
             totalJade += jade;
             totalWeaponQuota += weaponQuota;
+            totalNonUP += nonUP;
 
             if (draws < min) min = draws;
             if (draws > max) max = draws;
@@ -1497,12 +1518,15 @@
         const variance = allDraws.reduce((sum, d) => sum + Math.pow(d - avgDraws, 2), 0) / times;
         const stdDev = Math.sqrt(variance);
 
+        const avgNonUP = totalNonUP / times;
+
         return {
             times,
             avgDraws: Math.round(avgDraws),
             avgJade: Math.round(avgJade),
             avgTickets: Math.ceil(avgJade / 500),
             avgWeaponQuota: Math.round(avgWeaponQuota),
+            avgNonUP: Math.round(avgNonUP),
             min,
             max,
             median: Math.round(median),
