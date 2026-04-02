@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好友专属抽卡模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 24px;
+        }
+        .gacha-btn {
+            padding: 18px 50px;
+            font-size: 20px;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 30px;
+        }
+        .gacha-btn:hover {
+            background: #ff4da6;
+            transform: scale(1.05);
+        }
+        .result {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ff4500;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎁 好友专属抽卡模拟器</h1>
+    <button class="gacha-btn" onclick="drawCard()">点击抽卡</button>
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+    // 自定义你的卡池！改名字、概率就行
+    const cardPool = [
+        { name: "🌟 顶级奖励", rate: 5 },
+        { name: "🎈 稀有奖励", rate: 25 },
+        { name: "🎀 普通奖励", rate: 70 }
+    ];
+
+    function drawCard() {
+        const random = Math.floor(Math.random() * 100);
+        let currentRate = 0;
+        let result = "";
+        for (let card of cardPool) {
+            currentRate += card.rate;
+            if (random < currentRate) {
+                result = card.name;
+                break;
+            }
+        }
+        document.getElementById("result").textContent = `恭喜抽到：${result}`;
+    }
+</script>
+</body>
+</html>
