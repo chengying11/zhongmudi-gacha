@@ -562,6 +562,13 @@
                         上个卡池是否抽满60抽 (勾选后自动获得10张抽卡券)
                     </label>
                 </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="signInBonus">
+                    <label for="signInBonus">
+                        签到送5抽+兑换5抽 (勾选后自动获得10张抽卡券)
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -671,6 +678,13 @@
                     <input type="checkbox" id="prev60Pity2">
                     <label for="prev60Pity2">
                         上个卡池是否抽满60抽
+                    </label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="signInBonus2">
+                    <label for="signInBonus2">
+                        签到送5抽+兑换5抽 (勾选后自动获得10张抽卡券)
                     </label>
                 </div>
             </div>
@@ -1001,6 +1015,7 @@
         constructor(config) {
             this.tickets = config.tickets || 0;
             if (config.prev60Pity) this.tickets += 10;  // 60抽奖励
+            if (config.signInBonus) this.tickets += 10;  // 签到送5抽+兑换5抽
 
             this.originStone = config.useOriginStone ? (config.originStone || 0) : 0;
             this.jade = config.jade || 0;
@@ -1071,6 +1086,7 @@
             // 只有当pityInherit > 0时才继承保底
             this.basePity = (config.pityInherit && config.pityInherit > 0) ? config.pityInherit : 0;
             this.hasPrev60Pity = config.prev60Pity || false;
+            this.hasSignInBonus = config.signInBonus || false;
         }
 
         // 持续抽卡直到获得目标数量的限定角色
@@ -1160,6 +1176,15 @@
                 return false;
             };
 
+            // 签到送5抽+兑换5抽奖励：先执行10次免费抽（赠送的，不消耗用户资源）
+            if (this.hasSignInBonus) {
+                for (let i = 0; i < 10; i++) {
+                    if (drawOnce(true) && state.star6UP >= targetUP) {
+                        return { poolDraws: state.poolDraws, star6UP: state.star6UP, star6NonUP: state.star6NonUP, jadeConsumed: state.jadeConsumed, weaponQuota: state.weaponQuota };
+                    }
+                }
+            }
+
             // 上个卡池60抽奖励：先执行10次免费抽（赠送的，不消耗用户资源）
             if (this.hasPrev60Pity) {
                 for (let i = 0; i < 10; i++) {
@@ -1192,7 +1217,8 @@
             jade: parseInt(document.getElementById('jade').value) || 0,
             useOriginStone: document.getElementById('useOriginStone').checked,
             pityInherit: parseInt(document.getElementById('pityInherit').value) || 0,
-            prev60Pity: document.getElementById('prev60Pity').checked
+            prev60Pity: document.getElementById('prev60Pity').checked,
+            signInBonus: document.getElementById('signInBonus').checked
         };
     }
 
@@ -1393,7 +1419,8 @@
     function getConfig2() {
         return {
             pityInherit: parseInt(document.getElementById('pityInherit2').value) || 0,
-            prev60Pity: document.getElementById('prev60Pity2').checked
+            prev60Pity: document.getElementById('prev60Pity2').checked,
+            signInBonus: document.getElementById('signInBonus2').checked
         };
     }
 
